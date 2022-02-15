@@ -1,0 +1,64 @@
+---
+title: "Experimenting with the collapse package"
+author: "Keith McNulty"
+date: "15/02/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+Download a 1m row dataset on San Francisco crime incidents.
+
+```{r}
+options(timeout = 300)
+data <- read.csv("https://data.sfgov.org/api/views/tmnf-yvry/rows.csv?accessType=DOWNLOAD", nrows = 1000000)
+```
+
+Calculate the average number of incidents per day using `dplyr`.
+
+```{r}
+library(dplyr)
+
+average_count_daily1 <- function() {
+  data |> 
+    select(DayOfWeek, Date, IncidntNum) |> 
+    group_by(DayOfWeek, Date) |> 
+    dplyr::summarise(sum = n(), .groups = "drop") |> 
+    dplyr::group_by(DayOfWeek) |>
+    dplyr::summarise(mean(sum), .groups = "drop")
+}
+
+average_count_daily1()
+
+
+
+
+```
+
+Now do the same calculation using `collapse`.
+
+```{r}
+library(collapse)
+
+average_count_daily2 <- function() {
+  data |> 
+    fselect(DayOfWeek, Date, IncidntNum) |> 
+    fgroup_by(DayOfWeek, Date) |> 
+    fnobs() |> 
+    fselect(DayOfWeek, IncidntNum) |> 
+    fgroup_by(DayOfWeek) |> 
+    fmean()
+}
+
+average_count_daily2()
+```
+
+Test speed over 100 repeats.
+
+```{r}
+microbenchmark::microbenchmark(average_count_daily1(), average_count_daily2(), times = 100)
+```
+
+
