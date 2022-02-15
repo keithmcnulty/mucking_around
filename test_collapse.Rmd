@@ -7,13 +7,17 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+options(summarise.inform = FALSE)
 ```
 
-Download a 1m row dataset on San Francisco crime incidents.
+Download a 500k row dataset on San Francisco crime incidents.
 
 ```{r}
 options(timeout = 300)
-data <- read.csv("https://data.sfgov.org/api/views/tmnf-yvry/rows.csv?accessType=DOWNLOAD", nrows = 1000000)
+data <- read.csv(
+  "https://data.sfgov.org/api/views/tmnf-yvry/rows.csv?accessType=DOWNLOAD", 
+  nrows = 500000
+)
 ```
 
 Calculate the average number of incidents per day using `dplyr`.
@@ -21,23 +25,20 @@ Calculate the average number of incidents per day using `dplyr`.
 ```{r}
 library(dplyr)
 
-average_count_daily1 <- function() {
+average_count_daily1 <- function(...) {
   data |> 
-    select(DayOfWeek, Date, IncidntNum) |> 
-    group_by(DayOfWeek, Date) |> 
-    dplyr::summarise(sum = n(), .groups = "drop") |> 
+    dplyr::select(DayOfWeek, Date, IncidntNum) |> 
+    dplyr::group_by(DayOfWeek, Date) |> 
+    dplyr::summarise(sum = n(), ...) |>
     dplyr::group_by(DayOfWeek) |>
-    dplyr::summarise(mean(sum), .groups = "drop")
+    dplyr::summarise(mean(sum), ...)
 }
 
-average_count_daily1()
-
-
-
-
+average_count_daily1(.groups = "drop")
 ```
 
-Now do the same calculation using `collapse`.
+
+Now do the same calculation directly using `collapse` verbs.
 
 ```{r}
 library(collapse)
@@ -55,10 +56,13 @@ average_count_daily2 <- function() {
 average_count_daily2()
 ```
 
-Test speed over 100 repeats.
+Benchmark speed across 100 runs.
 
 ```{r}
-microbenchmark::microbenchmark(average_count_daily1(), average_count_daily2(), times = 100)
+microbenchmark::microbenchmark(
+  average_count_daily1(),
+  average_count_daily2(),
+  times = 100)
 ```
 
 

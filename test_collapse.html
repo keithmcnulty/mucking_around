@@ -171,33 +171,36 @@ pre code {
 </div>
 
 
-<p>Download a 1m row dataset on San Francisco crime incidents.</p>
+<p>Download a 500k row dataset on San Francisco crime incidents.</p>
 <pre class="r"><code>options(timeout = 300)
-data &lt;- read.csv(&quot;https://data.sfgov.org/api/views/tmnf-yvry/rows.csv?accessType=DOWNLOAD&quot;, nrows = 1000000)</code></pre>
+data &lt;- read.csv(
+  &quot;https://data.sfgov.org/api/views/tmnf-yvry/rows.csv?accessType=DOWNLOAD&quot;, 
+  nrows = 500000
+)</code></pre>
 <p>Calculate the average number of incidents per day using <code>dplyr</code>.</p>
 <pre class="r"><code>library(dplyr)
 
-average_count_daily1 &lt;- function() {
+average_count_daily1 &lt;- function(...) {
   data |&gt; 
-    select(DayOfWeek, Date, IncidntNum) |&gt; 
-    group_by(DayOfWeek, Date) |&gt; 
-    dplyr::summarise(sum = n(), .groups = &quot;drop&quot;) |&gt; 
+    dplyr::select(DayOfWeek, Date, IncidntNum) |&gt; 
+    dplyr::group_by(DayOfWeek, Date) |&gt; 
+    dplyr::summarise(sum = n(), ...) |&gt;
     dplyr::group_by(DayOfWeek) |&gt;
-    dplyr::summarise(mean(sum), .groups = &quot;drop&quot;)
+    dplyr::summarise(mean(sum), ...)
 }
 
-average_count_daily1()</code></pre>
+average_count_daily1(.groups = &quot;drop&quot;)</code></pre>
 <pre><code>## # A tibble: 7 x 2
 ##   DayOfWeek `mean(sum)`
 ##   &lt;chr&gt;           &lt;dbl&gt;
-## 1 Friday           190.
-## 2 Monday           173.
-## 3 Saturday         182.
-## 4 Sunday           168.
-## 5 Thursday         178.
-## 6 Tuesday          176.
-## 7 Wednesday        182.</code></pre>
-<p>Now do the same calculation using <code>collapse</code>.</p>
+## 1 Friday           95.2
+## 2 Monday           86.5
+## 3 Saturday         92.4
+## 4 Sunday           84.0
+## 5 Thursday         88.1
+## 6 Tuesday          87.7
+## 7 Wednesday        90.3</code></pre>
+<p>Now do the same calculation directly using <code>collapse</code> verbs.</p>
 <pre class="r"><code>library(collapse)
 
 average_count_daily2 &lt;- function() {
@@ -212,22 +215,25 @@ average_count_daily2 &lt;- function() {
 
 average_count_daily2()</code></pre>
 <pre><code>##   DayOfWeek IncidntNum
-## 1    Friday   190.2247
-## 2    Monday   173.2100
-## 3  Saturday   182.2160
-## 4    Sunday   167.8221
-## 5  Thursday   177.6721
-## 6   Tuesday   176.2257
-## 7 Wednesday   181.6987</code></pre>
-<p>Test speed over 100 repeats.</p>
-<pre class="r"><code>microbenchmark::microbenchmark(average_count_daily1(), average_count_daily2(), times = 100)</code></pre>
+## 1    Friday   95.23441
+## 2    Monday   86.54988
+## 3  Saturday   92.36967
+## 4    Sunday   83.98627
+## 5  Thursday   88.10224
+## 6   Tuesday   87.74625
+## 7 Wednesday   90.34956</code></pre>
+<p>Benchmark speed across 100 runs.</p>
+<pre class="r"><code>microbenchmark::microbenchmark(
+  average_count_daily1(),
+  average_count_daily2(),
+  times = 100)</code></pre>
 <pre><code>## Unit: milliseconds
-##                    expr      min        lq      mean   median        uq
-##  average_count_daily1() 175.4815 179.40929 190.62275 184.1214 207.82725
-##  average_count_daily2()  41.7562  43.31935  44.33107  44.0449  45.07207
-##        max neval cld
-##  233.19590   100   b
-##   53.23682   100  a</code></pre>
+##                    expr       min        lq      mean    median        uq
+##  average_count_daily1() 168.60641 173.38157 185.44367 182.05155 196.18245
+##  average_count_daily2()  19.60263  21.10007  21.53533  21.50294  21.82597
+##       max neval cld
+##  225.2483   100   b
+##   26.7600   100  a</code></pre>
 
 
 
